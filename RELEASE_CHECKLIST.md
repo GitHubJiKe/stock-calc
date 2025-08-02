@@ -1,6 +1,6 @@
 # 发布检查清单
 
-在发布股票收益计算器到公共网络之前，请完成以下检查清单：
+在发布股票收益计算器到 crates.io 之前，请完成以下检查清单：
 
 ## 1. 代码质量检查
 
@@ -69,12 +69,6 @@
 -   [ ] 创建 Release 标签
 -   [ ] 上传二进制文件
 
-### ✅ Homebrew 发布
-
--   [ ] 创建 Formula 文件
--   [ ] 计算 SHA256 哈希
--   [ ] 提交到 Homebrew/homebrew-core
-
 ## 5. 自动化配置
 
 ### ✅ GitHub Actions
@@ -127,20 +121,11 @@ cargo search stock-calc
 # 3. 上传二进制文件
 ```
 
-### 步骤 3: 提交到 Homebrew
-
-```bash
-# 1. Fork homebrew-core
-# 2. 添加 Formula
-# 3. 提交 PR
-```
-
 ## 8. 发布后检查
 
 ### ✅ 安装测试
 
 -   [ ] `cargo install stock-calc` 正常
--   [ ] `brew install stock-calc` 正常
 -   [ ] 功能使用正常
 
 ### ✅ 文档更新

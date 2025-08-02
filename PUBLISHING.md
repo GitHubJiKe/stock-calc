@@ -1,6 +1,6 @@
 # 发布指南
 
-本指南将帮助您将股票收益计算器发布到公共网络，让用户可以通过 Cargo 或 Homebrew 安装。
+本指南将帮助您将股票收益计算器发布到 crates.io，让用户可以通过 Cargo 安装。
 
 ## 1. 发布到 crates.io
 
@@ -57,72 +57,9 @@ cargo install stock-calc
 stock-calc --help
 ```
 
-## 2. 发布到 Homebrew
+## 2. 自动化发布流程
 
-### 2.1 创建 GitHub Release
-
-1. **创建 GitHub 仓库**
-
-    ```bash
-    git init
-    git add .
-    git commit -m "Initial commit"
-    git remote add origin https://github.com/GitHubJiKe/stock-calc.git
-    git push -u origin main
-    ```
-
-2. **创建 Release**
-    - 在 GitHub 上创建新的 Release
-    - 上传编译好的二进制文件
-    - 标记版本号 (如 v1.0.0)
-
-### 2.2 创建 Homebrew Formula
-
-创建 `Formula/stock-calc.rb` 文件：
-
-```ruby
-class StockCalc < Formula
-  desc "股票收益计算器 - 命令行工具"
-  homepage "https://github.com/GitHubJiKe/stock-calc"
-  version "1.0.0"
-
-  if OS.mac?
-    url "https://github.com/GitHubJiKe/stock-calc/releases/download/v1.0.0/stock-calc-x86_64-apple-darwin.tar.gz"
-    sha256 "your-sha256-hash"
-  elsif OS.linux?
-    url "https://github.com/GitHubJiKe/stock-calc/releases/download/v1.0.0/stock-calc-x86_64-unknown-linux-gnu.tar.gz"
-    sha256 "your-sha256-hash"
-  end
-
-  def install
-    bin.install "stock-calc"
-  end
-
-  test do
-    system "#{bin}/stock-calc", "--version"
-  end
-end
-```
-
-### 2.3 提交到 Homebrew
-
-1. **Fork Homebrew/homebrew-core**
-2. **添加 Formula**
-3. **提交 Pull Request**
-
-### 2.4 用户安装
-
-```bash
-# 安装
-brew install stock-calc
-
-# 使用
-stock-calc --help
-```
-
-## 3. 自动化发布流程
-
-### 3.1 创建 GitHub Actions
+### 2.1 创建 GitHub Actions
 
 创建 `.github/workflows/release.yml`：
 
@@ -139,14 +76,13 @@ jobs:
         runs-on: ${{ matrix.os }}
         strategy:
             matrix:
-                os: [ubuntu-latest, macos-latest, windows-latest]
+                os: [ubuntu-latest, macos-latest]
                 target:
                     - x86_64-unknown-linux-gnu
                     - x86_64-apple-darwin
-                    - x86_64-pc-windows-msvc
 
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v4
 
             - name: Install Rust
               uses: actions-rs/toolchain@v1
@@ -162,11 +98,29 @@ jobs:
               with:
                   files: |
                       target/${{ matrix.target }}/release/stock-calc
+                  draft: false
+                  prerelease: false
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    publish:
+        needs: build
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Install Rust
+              uses: actions-rs/toolchain@v1
+              with:
+                  toolchain: stable
+
+            - name: Publish to crates.io
+              run: cargo publish
+              env:
+                  CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 ```
 
-### 3.2 创建发布脚本
+### 2.2 创建发布脚本
 
 创建 `scripts/release.sh`：
 
@@ -189,9 +143,9 @@ cargo publish
 echo "Released version $VERSION"
 ```
 
-## 4. 文档和营销
+## 3. 文档和营销
 
-### 4.1 更新 README
+### 3.1 更新 README
 
 确保 README 包含：
 
@@ -200,7 +154,7 @@ echo "Released version $VERSION"
 -   功能特性
 -   贡献指南
 
-### 4.2 创建项目网站
+### 3.2 创建项目网站
 
 可以考虑创建简单的项目网站，展示：
 
@@ -209,16 +163,16 @@ echo "Released version $VERSION"
 -   使用示例
 -   更新日志
 
-## 5. 维护和更新
+## 4. 维护和更新
 
-### 5.1 版本管理
+### 4.1 版本管理
 
 使用语义化版本控制：
 
 -   MAJOR.MINOR.PATCH
 -   例如：1.0.0, 1.0.1, 1.1.0
 
-### 5.2 更新流程
+### 4.2 更新流程
 
 1. **更新版本号**
 
@@ -241,9 +195,9 @@ echo "Released version $VERSION"
     cargo publish
     ```
 
-## 6. 用户支持
+## 5. 用户支持
 
-### 6.1 创建 Issues 模板
+### 5.1 创建 Issues 模板
 
 创建 `.github/ISSUE_TEMPLATE/bug_report.md`：
 
@@ -263,7 +217,7 @@ echo "Released version $VERSION"
 -   安装方式:
 ```
 
-### 6.2 创建 Pull Request 模板
+### 5.2 创建 Pull Request 模板
 
 创建 `.github/PULL_REQUEST_TEMPLATE.md`：
 
@@ -283,15 +237,15 @@ echo "Released version $VERSION"
 -   [ ] 手动测试通过
 ```
 
-## 7. 监控和反馈
+## 6. 监控和反馈
 
-### 7.1 使用统计
+### 6.1 使用统计
 
 -   监控 crates.io 下载量
 -   监控 GitHub 星标和 Fork
 -   收集用户反馈
 
-### 7.2 社区建设
+### 6.2 社区建设
 
 -   回复 Issues 和 Pull Requests
 -   参与相关社区讨论
@@ -299,7 +253,7 @@ echo "Released version $VERSION"
 
 ## 总结
 
-通过以上步骤，您可以将股票收益计算器发布到公共网络，让更多用户受益。记住：
+通过以上步骤，您可以将股票收益计算器发布到 crates.io，让更多用户受益。记住：
 
 1. **质量第一**: 确保代码质量和测试覆盖
 2. **文档完善**: 提供清晰的使用文档

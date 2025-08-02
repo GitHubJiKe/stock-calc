@@ -67,7 +67,7 @@ stock-calc --help
     git init
     git add .
     git commit -m "Initial commit"
-    git remote add origin https://github.com/your-username/stock-calc.git
+    git remote add origin https://github.com/GitHubJiKe/stock-calc.git
     git push -u origin main
     ```
 
@@ -83,14 +83,14 @@ stock-calc --help
 ```ruby
 class StockCalc < Formula
   desc "股票收益计算器 - 命令行工具"
-  homepage "https://github.com/your-username/stock-calc"
+  homepage "https://github.com/GitHubJiKe/stock-calc"
   version "1.0.0"
 
   if OS.mac?
-    url "https://github.com/your-username/stock-calc/releases/download/v1.0.0/stock-calc-x86_64-apple-darwin.tar.gz"
+    url "https://github.com/GitHubJiKe/stock-calc/releases/download/v1.0.0/stock-calc-x86_64-apple-darwin.tar.gz"
     sha256 "your-sha256-hash"
   elsif OS.linux?
-    url "https://github.com/your-username/stock-calc/releases/download/v1.0.0/stock-calc-x86_64-unknown-linux-gnu.tar.gz"
+    url "https://github.com/GitHubJiKe/stock-calc/releases/download/v1.0.0/stock-calc-x86_64-unknown-linux-gnu.tar.gz"
     sha256 "your-sha256-hash"
   end
 

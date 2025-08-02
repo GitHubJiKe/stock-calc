@@ -1,13 +1,13 @@
 class StockCalc < Formula
   desc "股票收益计算器 - 命令行工具"
-  homepage "https://github.com/your-username/stock-calc"
+  homepage "https://github.com/GitHubJiKe/stock-calc"
   version "1.0.0"
 
   if OS.mac?
-    url "https://github.com/your-username/stock-calc/releases/download/v1.0.0/stock-calc-x86_64-apple-darwin"
+    url "https://github.com/GitHubJiKe/stock-calc/releases/download/v1.0.0/stock-calc-x86_64-apple-darwin"
     sha256 "your-sha256-hash-here"
   elsif OS.linux?
-    url "https://github.com/your-username/stock-calc/releases/download/v1.0.0/stock-calc-x86_64-unknown-linux-gnu"
+    url "https://github.com/GitHubJiKe/stock-calc/releases/download/v1.0.0/stock-calc-x86_64-unknown-linux-gnu"
     sha256 "your-sha256-hash-here"
   end
 

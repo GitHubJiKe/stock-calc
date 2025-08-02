@@ -38,7 +38,7 @@ stock-calc --help
 
 ```bash
 # 克隆仓库
-git clone https://github.com/your-username/stock-calc.git
+git clone https://github.com/GitHubJiKe/stock-calc.git
 cd stock-calc
 
 # 编译
@@ -50,7 +50,7 @@ cargo install --path .
 
 ### 下载预编译二进制文件
 
-访问 [GitHub Releases](https://github.com/your-username/stock-calc/releases) 下载适合您系统的预编译二进制文件。
+访问 [GitHub Releases](https://github.com/GitHubJiKe/stock-calc/releases) 下载适合您系统的预编译二进制文件。
 
 ## 使用方法
 

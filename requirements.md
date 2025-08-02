@@ -414,7 +414,7 @@ OPTIONS:
 cargo install stock-calc
 
 # 二进制下载
-curl -L https://github.com/user/stock-calc/releases/latest/download/stock-calc-x86_64-unknown-linux-gnu.tar.gz | tar xz
+curl -L https://github.com/GitHubJiKe/stock-calc/releases/latest/download/stock-calc-x86_64-unknown-linux-gnu.tar.gz | tar xz
 
 # 包管理器
 # macOS: brew install stock-calc

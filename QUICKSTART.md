@@ -19,7 +19,7 @@ brew install stock-calc
 ### 方式三：从源码编译
 
 ```bash
-git clone https://github.com/your-username/stock-calc.git
+git clone https://github.com/GitHubJiKe/stock-calc.git
 cd stock-calc
 cargo build --release
 cargo install --path .
@@ -94,5 +94,5 @@ show_progress = true
 
 -   查看帮助：`stock-calc --help`
 -   查看命令帮助：`stock-calc <command> --help`
--   提交 Issue：https://github.com/your-username/stock-calc/issues
--   查看文档：https://github.com/your-username/stock-calc#readme
+-   提交 Issue：https://github.com/GitHubJiKe/stock-calc/issues
+-   查看文档：https://github.com/GitHubJiKe/stock-calc#readme

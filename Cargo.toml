@@ -2,14 +2,14 @@
 name = "stock-calc"
 version = "1.0.0"
 edition = "2021"
-authors = ["Your Name <your.email@example.com>"]
+authors = ["PeterYuan <ypf9319@gmail.com>"]
 description = "股票收益计算器 - 命令行工具"
 license = "MIT"
-repository = "https://github.com/your-username/stock-calc"
+repository = "https://github.com/GitHubJiKe/stock-calc"
 keywords = ["stock", "calculator", "investment", "cli", "finance", "trading"]
 categories = ["command-line-utilities", "financial"]
 readme = "README.md"
-homepage = "https://github.com/your-username/stock-calc"
+homepage = "https://github.com/GitHubJiKe/stock-calc"
 documentation = "https://docs.rs/stock-calc"
 
 rust-version = "1.70"

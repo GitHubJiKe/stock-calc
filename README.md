@@ -24,16 +24,6 @@ cargo install stock-calc
 stock-calc --help
 ```
 
-### 使用 Homebrew 安装 (macOS)
-
-```bash
-# 安装
-brew install stock-calc
-
-# 使用
-stock-calc --help
-```
-
 ### 从源码编译
 
 ```bash

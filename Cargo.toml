@@ -1,0 +1,77 @@
+[package]
+name = "stock-calc"
+version = "1.0.0"
+edition = "2021"
+authors = ["Your Name <your.email@example.com>"]
+description = "股票收益计算器 - 命令行工具"
+license = "MIT"
+repository = "https://github.com/your-username/stock-calc"
+keywords = ["stock", "calculator", "investment", "cli", "finance", "trading"]
+categories = ["command-line-utilities", "financial"]
+readme = "README.md"
+homepage = "https://github.com/your-username/stock-calc"
+documentation = "https://docs.rs/stock-calc"
+
+rust-version = "1.70"
+
+[dependencies]
+# 异步运行时
+tokio = { version = "1.0", features = ["full"] }
+
+# HTTP客户端
+reqwest = { version = "0.11", features = ["json"] }
+
+# 序列化
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# 命令行参数解析
+clap = { version = "4.0", features = ["derive"] }
+
+# 错误处理
+anyhow = "1.0"
+thiserror = "1.0"
+
+# 时间处理
+chrono = { version = "0.4", features = ["serde"] }
+
+# 配置管理
+config = "0.13"
+toml = "0.8"
+
+# 日志
+log = "0.4"
+env_logger = "0.10"
+
+# 终端控制
+crossterm = "0.27"
+
+# 系统通知
+notify-rust = "4.0"
+
+# 颜色输出
+colored = "2.0"
+
+# 进度条
+indicatif = "0.17"
+
+# 正则表达式
+regex = "1.0"
+
+# 数字格式化
+num-format = "0.4"
+
+# 目录操作
+dirs = "5.0"
+
+[dev-dependencies]
+tokio-test = "0.4"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[package.metadata.release]
+pre-release-commit-message = "chore: release {{version}}"
+tag-message = "Release {{version}}"
+tag-name = "v{{version}}" 

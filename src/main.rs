@@ -327,7 +327,7 @@ mod tests {
         let config = AppConfig::default();
         let result = handle_calculate(
             &config,
-            "000001".to_string(),
+            "000001",
             1000.0,
             15.5,
             5000.0,

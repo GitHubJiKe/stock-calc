@@ -1,6 +1,6 @@
 [package]
 name = "stock-calc"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 authors = ["PeterYuan <ypf9319@gmail.com>"]
 description = "股票收益计算器 - 命令行工具"

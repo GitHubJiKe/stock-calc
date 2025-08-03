@@ -1,5 +1,6 @@
 use crate::error::{Result, StockCalcError};
 use crate::config::AppConfig;
+use crate::models::StockInfo;
 use regex::Regex;
 use std::time::Duration;
 
@@ -86,6 +87,83 @@ impl StockApi {
             Ok(_) => Ok(true),
             Err(_) => Ok(false),
         }
+    }
+
+    pub async fn fetch_stock_info(&self, stock_code: &str) -> Result<StockInfo> {
+        let url = format!("http://sqt.gtimg.cn/utf8/q={}", stock_code);
+        
+        for attempt in 1..=self.config.api.retry_count {
+            match self.fetch_stock_info_with_retry(&url).await {
+                Ok(info) => return Ok(info),
+                Err(e) => {
+                    if attempt == self.config.api.retry_count {
+                        return Err(e);
+                    }
+                    log::warn!("第{}次尝试失败，正在重试: {}", attempt, e);
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                }
+            }
+        }
+
+        Err(StockCalcError::ParseError("所有重试都失败了".to_string()))
+    }
+
+    async fn fetch_stock_info_with_retry(&self, url: &str) -> Result<StockInfo> {
+        let response = self.client.get(url).send().await?;
+        
+        if !response.status().is_success() {
+            return Err(StockCalcError::ParseError(
+                format!("HTTP错误: {}", response.status())
+            ));
+        }
+
+        let text = response.text().await?;
+        self.parse_stock_info(&text)
+    }
+
+    fn parse_stock_info(&self, response_text: &str) -> Result<StockInfo> {
+        // 使用正则表达式解析响应
+        let re = Regex::new(r#"v_[^=]+="([^"]+)""#).map_err(|e| {
+            StockCalcError::ParseError(format!("正则表达式错误: {}", e))
+        })?;
+
+        if let Some(captures) = re.captures(response_text) {
+            if let Some(data) = captures.get(1) {
+                let fields: Vec<&str> = data.as_str().split('~').collect();
+                
+                if fields.len() >= 32 {
+                    let name = fields[1].to_string();
+                    let code = fields[2].to_string();
+                    let current_price = fields[3].parse::<f64>().unwrap_or(0.0);
+                    let yesterday_close = fields[4].parse::<f64>().unwrap_or(0.0);
+                    let open_price = fields[5].parse::<f64>().unwrap_or(0.0);
+                    let volume = fields[6].parse::<u64>().unwrap_or(0);
+                    let turnover = fields[37].parse::<f64>().unwrap_or(0.0);
+                    let high_price = fields[33].parse::<f64>().unwrap_or(0.0);
+                    let low_price = fields[34].parse::<f64>().unwrap_or(0.0);
+                    let change_amount = fields[31].parse::<f64>().unwrap_or(0.0);
+                    let change_percent = fields[32].parse::<f64>().unwrap_or(0.0);
+                    
+                    return Ok(StockInfo {
+                        name,
+                        code,
+                        current_price,
+                        yesterday_close,
+                        open_price,
+                        volume,
+                        turnover,
+                        high_price,
+                        low_price,
+                        change_amount,
+                        change_percent,
+                    });
+                }
+            }
+        }
+
+        Err(StockCalcError::ApiResponseError(
+            format!("无法解析股票信息，响应: {}", response_text)
+        ))
     }
 }
 

@@ -4,6 +4,15 @@ use crate::models::StockData;
 use crate::config::AppConfig;
 use chrono::Utc;
 
+/// 解析逗号分隔的股票代码字符串为向量
+pub fn parse_stock_codes(code_str: &str) -> Vec<String> {
+    code_str
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect()
+}
+
 #[derive(Parser)]
 #[command(name = "stock-calc")]
 #[command(about = "股票收益计算器 - 命令行工具")]
@@ -17,7 +26,7 @@ pub struct Cli {
 pub enum Commands {
     /// 计算股票收益
     Calculate {
-        /// 股票代码
+        /// 股票代码（支持多个，用逗号分隔）
         #[arg(short, long)]
         code: String,
 
@@ -44,7 +53,7 @@ pub enum Commands {
 
     /// 实时监控股票
     Monitor {
-        /// 股票代码
+        /// 股票代码（支持多个，用逗号分隔）
         #[arg(short, long)]
         code: String,
 
@@ -66,7 +75,7 @@ pub enum Commands {
 
     /// 删除股票数据
     Remove {
-        /// 股票代码
+        /// 股票代码（支持多个，用逗号分隔）
         #[arg(short, long)]
         code: String,
     },
@@ -78,6 +87,13 @@ pub enum Commands {
     Config {
         #[command(subcommand)]
         subcommand: ConfigSubcommand,
+    },
+
+    /// 校验股票代码
+    Test {
+        /// 股票代码（支持多个，用逗号分隔）
+        #[arg(short, long)]
+        code: String,
     },
 }
 
@@ -192,6 +208,7 @@ pub fn print_help() {
     println!("  monitor      实时监控股票");
     println!("  list         查看历史数据");
     println!("  remove       删除股票数据");
+    println!("  test         校验股票代码");
     println!("  interactive  交互式模式");
     println!("  config       配置管理");
     println!();
@@ -201,6 +218,9 @@ pub fn print_help() {
     println!();
     println!("  # 实时监控");
     println!("  stock-calc monitor --code 000001 --interval 60");
+    println!();
+    println!("  # 校验股票代码");
+    println!("  stock-calc test --code 000001");
     println!();
     println!("  # 交互式模式");
     println!("  stock-calc interactive");

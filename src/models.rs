@@ -2,6 +2,21 @@ use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StockInfo {
+    pub name: String,
+    pub code: String,
+    pub current_price: f64,
+    pub yesterday_close: f64,
+    pub open_price: f64,
+    pub volume: u64,
+    pub turnover: f64,
+    pub high_price: f64,
+    pub low_price: f64,
+    pub change_amount: f64,
+    pub change_percent: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StockData {
     pub code: String,
     pub quantity: f64,

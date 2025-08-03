@@ -31,22 +31,25 @@ async fn main() -> Result<()> {
 
     match cli.command {
         Commands::Calculate { code, quantity, avg_price, target_profit, max_loss, save } => {
-            handle_calculate(&config, code, quantity, avg_price, target_profit, max_loss, save).await?;
+            handle_calculate(&config, &code, quantity, avg_price, target_profit, max_loss, save).await?;
         }
         Commands::Monitor { code, interval, retry } => {
-            handle_monitor(&config, code, interval, retry).await?;
+            handle_monitor(&config, &code, interval, retry).await?;
         }
         Commands::List { detailed } => {
             handle_list(&config, detailed).await?;
         }
         Commands::Remove { code } => {
-            handle_remove(&config, code).await?;
+            handle_remove(&config, &code).await?;
         }
         Commands::Interactive => {
             InteractiveMode::run().await?;
         }
         Commands::Config { subcommand } => {
             handle_config(&config, subcommand).await?;
+        }
+        Commands::Test { code } => {
+            handle_test(&config, &code).await?;
         }
     }
 
@@ -55,47 +58,60 @@ async fn main() -> Result<()> {
 
 async fn handle_calculate(
     config: &AppConfig,
-    code: String,
+    code: &str,
     quantity: f64,
     avg_price: f64,
     target_profit: f64,
     max_loss: f64,
     save: bool,
 ) -> Result<()> {
-    // 验证输入
-    crate::calculator::StockCalculator::validate_input(
-        &code, quantity, avg_price, target_profit, max_loss,
-    )?;
+    let stock_codes = crate::cli::parse_stock_codes(code);
+    
+    if stock_codes.is_empty() {
+        return Err(crate::error::StockCalcError::ParseError("未提供有效的股票代码".to_string()));
+    }
 
-    // 创建股票数据
-    let stock_data = StockData {
-        code: code.clone(),
-        quantity,
-        avg_price,
-        target_profit,
-        max_loss,
-        last_updated: Utc::now(),
-    };
-
-    // 获取实时价格
     let api = crate::api::StockApi::new(config.clone())?;
-    let current_price = api.fetch_stock_price(&code).await?;
-
-    // 计算分析
-    let analysis = crate::calculator::StockCalculator::calculate_analysis(&stock_data, current_price);
-
-    // 显示结果
+    let storage = crate::storage::Storage::new(config.clone());
     let notifier = crate::notification::Notifier::new(config.clone());
-    notifier.print_analysis(&analysis);
 
-    // 检查提醒
-    notifier.check_alerts(&analysis).await?;
+    for (i, stock_code) in stock_codes.iter().enumerate() {
+        if i > 0 {
+            println!("{}", "━".repeat(50));
+        }
 
-    // 保存到数据库
-    if save {
-        let storage = crate::storage::Storage::new(config.clone());
-        storage.add_stock(stock_data)?;
-        println!("✅ 数据已保存到数据库");
+        // 验证输入
+        crate::calculator::StockCalculator::validate_input(
+            stock_code, quantity, avg_price, target_profit, max_loss,
+        )?;
+
+        // 创建股票数据
+        let stock_data = StockData {
+            code: stock_code.clone(),
+            quantity,
+            avg_price,
+            target_profit,
+            max_loss,
+            last_updated: Utc::now(),
+        };
+
+        // 获取实时价格
+        let current_price = api.fetch_stock_price(stock_code).await?;
+
+        // 计算分析
+        let analysis = crate::calculator::StockCalculator::calculate_analysis(&stock_data, current_price);
+
+        // 显示结果
+        notifier.print_analysis(&analysis);
+
+        // 检查提醒
+        notifier.check_alerts(&analysis).await?;
+
+        // 保存到数据库
+        if save {
+            storage.add_stock(stock_data)?;
+            println!("✅ 数据已保存到数据库");
+        }
     }
 
     Ok(())
@@ -103,24 +119,35 @@ async fn handle_calculate(
 
 async fn handle_monitor(
     config: &AppConfig,
-    code: String,
+    code: &str,
     interval: u64,
     retry: u32,
 ) -> Result<()> {
+    let stock_codes = crate::cli::parse_stock_codes(code);
+    
+    if stock_codes.is_empty() {
+        return Err(crate::error::StockCalcError::ParseError("未提供有效的股票代码".to_string()));
+    }
+
     let api = crate::api::StockApi::new(config.clone())?;
     let storage = crate::storage::Storage::new(config.clone());
     let notifier = crate::notification::Notifier::new(config.clone());
 
-    // 获取股票数据
-    let stock_data = match storage.get_stock(&code)? {
-        Some(data) => data,
-        None => {
-            println!("❌ 未找到股票 {} 的数据，请先使用 calculate 命令添加", code);
-            return Ok(());
+    // 获取所有股票数据
+    let mut stock_data_map = std::collections::HashMap::new();
+    for stock_code in &stock_codes {
+        match storage.get_stock(stock_code)? {
+            Some(data) => {
+                stock_data_map.insert(stock_code.clone(), data);
+            }
+            None => {
+                println!("❌ 未找到股票 {} 的数据，请先使用 calculate 命令添加", stock_code);
+                return Ok(());
+            }
         }
-    };
+    }
 
-    println!("🔄 实时监控: {} (每{}秒更新)", code, interval);
+    println!("🔄 实时监控: {} (每{}秒更新)", stock_codes.join(", "), interval);
     println!("{}", "━".repeat(50));
 
     let mut interval_timer = tokio::time::interval(Duration::from_secs(interval));
@@ -128,35 +155,41 @@ async fn handle_monitor(
     loop {
         interval_timer.tick().await;
 
-        match api.fetch_stock_price(&code).await {
-            Ok(current_price) => {
-                let analysis = crate::calculator::StockCalculator::calculate_analysis(&stock_data, current_price);
-                
-                // 显示实时状态
-                let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S");
-                println!("⏰ {}", timestamp);
-                println!("💰 当前价格: {} ({})", 
-                    crate::calculator::StockCalculator::format_currency(current_price),
-                    if analysis.profit_ratio > 0.0 {
-                        format!("+{:.2}%", analysis.profit_ratio)
-                    } else {
-                        format!("{:.2}%", analysis.profit_ratio)
-                    }
-                );
-                println!("📊 距离目标: {:.2}% | 距离止损: {:.2}%", 
-                    analysis.distance_to_target, analysis.distance_to_stop_loss);
-                println!();
+        let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S");
+        println!("⏰ {}", timestamp);
 
-                // 检查提醒
-                notifier.check_alerts(&analysis).await?;
+        for (i, stock_code) in stock_codes.iter().enumerate() {
+            if i > 0 {
+                println!("{}", "─".repeat(30));
             }
-            Err(e) => {
-                println!("❌ 获取价格失败: {}", e);
-                if retry > 0 {
-                    println!("🔄 {} 秒后重试...", interval);
+
+            match api.fetch_stock_price(stock_code).await {
+                Ok(current_price) => {
+                    let stock_data = &stock_data_map[stock_code];
+                    let analysis = crate::calculator::StockCalculator::calculate_analysis(stock_data, current_price);
+                    
+                    // 显示实时状态
+                    println!("📈 {}: {} ({})", 
+                        stock_code,
+                        crate::calculator::StockCalculator::format_currency(current_price),
+                        if analysis.profit_ratio > 0.0 {
+                            format!("+{:.2}%", analysis.profit_ratio)
+                        } else {
+                            format!("{:.2}%", analysis.profit_ratio)
+                        }
+                    );
+                    println!("📊 距离目标: {:.2}% | 距离止损: {:.2}%", 
+                        analysis.distance_to_target, analysis.distance_to_stop_loss);
+
+                    // 检查提醒
+                    notifier.check_alerts(&analysis).await?;
+                }
+                Err(e) => {
+                    println!("❌ {} 获取价格失败: {}", stock_code, e);
                 }
             }
         }
+        println!();
     }
 }
 
@@ -195,12 +228,20 @@ async fn handle_list(config: &AppConfig, detailed: bool) -> Result<()> {
     Ok(())
 }
 
-async fn handle_remove(config: &AppConfig, code: String) -> Result<()> {
+async fn handle_remove(config: &AppConfig, code: &str) -> Result<()> {
+    let stock_codes = crate::cli::parse_stock_codes(code);
+    
+    if stock_codes.is_empty() {
+        return Err(crate::error::StockCalcError::ParseError("未提供有效的股票代码".to_string()));
+    }
+
     let storage = crate::storage::Storage::new(config.clone());
     
-    match storage.remove_stock(&code)? {
-        Some(_) => println!("✅ 已删除股票 {} 的数据", code),
-        None => println!("❌ 未找到股票 {} 的数据", code),
+    for stock_code in stock_codes {
+        match storage.remove_stock(&stock_code)? {
+            Some(_) => println!("✅ 已删除股票 {} 的数据", stock_code),
+            None => println!("❌ 未找到股票 {} 的数据", stock_code),
+        }
     }
 
     Ok(())
@@ -230,6 +271,46 @@ async fn handle_config(config: &AppConfig, subcommand: crate::cli::ConfigSubcomm
             match AppConfig::get_config_path() {
                 Ok(path) => println!("   {}", path.display()),
                 Err(_) => println!("   无法获取配置文件路径"),
+            }
+        }
+    }
+
+    Ok(())
+}
+
+async fn handle_test(config: &AppConfig, code: &str) -> Result<()> {
+    let stock_codes = crate::cli::parse_stock_codes(code);
+    
+    if stock_codes.is_empty() {
+        return Err(crate::error::StockCalcError::ParseError("未提供有效的股票代码".to_string()));
+    }
+
+    let api = crate::api::StockApi::new(config.clone())?;
+    
+    for (i, stock_code) in stock_codes.iter().enumerate() {
+        if i > 0 {
+            println!("{}", "━".repeat(50));
+        }
+
+        // 尝试获取股票信息
+        match api.fetch_stock_info(stock_code).await {
+            Ok(stock_info) => {
+                println!("✅ 股票代码 {} 可查", stock_code);
+                println!("{}", "━".repeat(50));
+                println!("📈 股票名称: {}", stock_info.name);
+                println!("🔢 股票代码: {}", stock_info.code);
+                println!("💰 当前价格: ¥{:.3}", stock_info.current_price);
+                println!("📊 涨跌金额: ¥{:.3}", stock_info.change_amount);
+                println!("📈 涨跌幅度: {:.2}%", stock_info.change_percent);
+                println!("📅 昨收价格: ¥{:.3}", stock_info.yesterday_close);
+                println!("🌅 开盘价格: ¥{:.3}", stock_info.open_price);
+                println!("📈 最高价格: ¥{:.3}", stock_info.high_price);
+                println!("📉 最低价格: ¥{:.3}", stock_info.low_price);
+                println!("📊 成交量: {} 手", stock_info.volume / 100);
+                println!("💵 成交额: ¥{:.2} 万", stock_info.turnover / 10000.0);
+            }
+            Err(_) => {
+                println!("❌ 请重新填写正确的股票代码: {}", stock_code);
             }
         }
     }
